@@ -342,3 +342,20 @@ tap.test('should not override validation errors (issue #209)', async (t) => {
   const payload = JSON.parse(response.payload);
   t.equal("querystring must have required property 'foo'", payload.message);
 });
+
+tap.test('should parse baggage header correctly (issue #316)', async (t) => {
+  const app = await setup({ dsn: DSN, tracesSampleRate: 0.2 }, async (s) => {
+    s.get('/', {}, async function () {
+      return { foo: true };
+    });
+  });
+  const response = await app.inject({
+    method: 'GET',
+    path: '/',
+    headers: {
+      baggage: 'i am value',
+    },
+  });
+  await app.Sentry.flush();
+  t.equal(200, response.statusCode);
+});
